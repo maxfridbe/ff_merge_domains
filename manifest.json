@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Merge Tabs by Domain",
+  "version": "1.0.0",
+  "description": "Gather all tabs for a domain from every window into a new or existing window.",
+  "permissions": [
+    "tabs"
+  ],
+  "action": {
+    "default_title": "Merge tabs by domain",
+    "default_popup": "popup.html",
+    "default_icon": "icons/icon.svg"
+  },
+  "icons": {
+    "48": "icons/icon.svg",
+    "96": "icons/icon.svg"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "merge-domains@maxfridbe",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    }
+  }
+}
