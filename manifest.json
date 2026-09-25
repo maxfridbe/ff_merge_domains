@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Merge Tabs by Domain",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Gather all tabs for a domain from every window into a new or existing window.",
   "permissions": [
     "tabs"

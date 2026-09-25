@@ -20,6 +20,8 @@ async function refresh() {
     const d = domainOf(t.url);
     if (d) counts.set(d, (counts.get(d) || 0) + 1);
   }
+  // Only domains with at least two tabs are worth merging.
+  for (const [d, n] of counts) if (n < 2) counts.delete(d);
   const prevDomain = domainSel.value;
   domainSel.replaceChildren();
   [...counts.entries()]
