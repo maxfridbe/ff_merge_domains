@@ -48,31 +48,14 @@ async function merge() {
   const domain = domainSel.value;
   if (!domain) return;
   mergeBtn.disabled = true;
-
-  const tabs = (await browser.tabs.query({})).filter((t) => domainOf(t.url) === domain);
-  let windowId;
-  let toMove = tabs;
-
-  if (targetSel.value === "new") {
-    const [first, ...rest] = tabs;
-    const win = await browser.windows.create({ tabId: first.id });
-    windowId = win.id;
-    toMove = rest;
-  } else {
-    windowId = Number(targetSel.value);
-    toMove = tabs.filter((t) => t.windowId !== windowId);
-  }
-
-  // Pinned tabs can't be moved past unpinned ones; unpin them first.
-  for (const t of toMove) {
-    if (t.pinned) await browser.tabs.update(t.id, { pinned: false });
-  }
-  if (toMove.length) {
-    await browser.tabs.move(toMove.map((t) => t.id), { windowId, index: -1 });
-  }
-  await browser.windows.update(windowId, { focused: true });
-
-  statusEl.textContent = `Moved ${toMove.length} of ${tabs.length} ${domain} tab(s).`;
+  statusEl.textContent = "Moving…";
+  // The background script does the work, since this popup closes when focus changes.
+  const { moved, total } = await browser.runtime.sendMessage({
+    type: "merge",
+    domain,
+    target: targetSel.value,
+  });
+  statusEl.textContent = `Moved ${moved} of ${total} ${domain} tab(s).`;
   await refresh();
 }
 
