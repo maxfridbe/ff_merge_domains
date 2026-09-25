@@ -1,0 +1,68 @@
+name: Release
+
+# Every push to main checks manifest.json's version. If there is no GitHub
+# release for it yet, the extension is signed by AMO (unlisted) and published
+# as a release, along with the updates.json that installed copies poll.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency: release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install web-ext
+        run: npm install --global web-ext@8
+
+      - name: Lint
+        run: web-ext lint --self-hosted
+
+      - name: Check for existing release
+        id: version
+        run: |
+          version=$(jq -r .version manifest.json)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if gh release view "v$version" > /dev/null 2>&1; then
+            echo "Release v$version already exists; nothing to publish."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Sign with AMO
+        if: steps.version.outputs.exists == 'false'
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: |
+          web-ext sign --channel=unlisted --artifacts-dir dist
+          mv dist/*.xpi dist/merge-tabs-by-domain.xpi
+
+      - name: Publish release
+        if: steps.version.outputs.exists == 'false'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          id=$(jq -r .browser_specific_settings.gecko.id manifest.json)
+          link="https://github.com/${GITHUB_REPOSITORY}/releases/download/v${VERSION}/merge-tabs-by-domain.xpi"
+          hash="sha256:$(sha256sum dist/merge-tabs-by-domain.xpi | cut -d' ' -f1)"
+          jq -n --arg id "$id" --arg v "$VERSION" --arg link "$link" --arg hash "$hash" \
+            '{addons: {($id): {updates: [{version: $v, update_link: $link, update_hash: $hash}]}}}' \
+            > dist/updates.json
+          gh release create "v$VERSION" \
+            dist/merge-tabs-by-domain.xpi dist/updates.json \
+            --title "v$VERSION" --generate-notes --target "$GITHUB_SHA"

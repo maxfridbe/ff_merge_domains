@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Merge Tabs by Domain",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Gather all tabs for a domain from every window into a new or existing window.",
   "permissions": [
     "tabs"
@@ -23,7 +23,8 @@
         "required": [
           "none"
         ]
-      }
+      },
+      "update_url": "https://github.com/maxfridbe/ff_merge_domains/releases/latest/download/updates.json"
     }
   },
   "background": {
